@@ -1,0 +1,30 @@
+[prune]
+  go-tests = true
+  unused-packages = true
+  non-go = true
+
+[[override]]
+  name = "github.com/docker/cli"
+  revision = "3a6f8b677484de8e5ebc315d2ff6e8dab5948088"
+
+[[constraint]]
+  # There is a very important bugfix, required for accessing quay, in
+  # 1bfbeca7269121e55d2b7a66853563aa25973790. Just use master.
+  name = "github.com/docker/distribution"
+  revision = "749f6afb4572201e3c37325d0ffedb6f32be8950"
+
+[[constraint]]
+  name = "github.com/docker/docker"
+  revision = "8e908cab46ee73104bedc4cf5fc4a15b7647b500"
+
+[[override]]
+  # Most recent release of this lib is very old, and docker depends on a newer
+  # one, so override.
+  name = "github.com/prometheus/client_golang"
+  branch = "master"
+
+[[override]]
+  # Need 009d2835cf444e62af0aa432b345f16227ab93cb (which implements a non-linux
+  # stub for RunningInUserNS)
+  name = "github.com/opencontainers/runc"
+  version = "v1.0.0-rc4"
