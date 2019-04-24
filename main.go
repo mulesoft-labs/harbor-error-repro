@@ -3,58 +3,32 @@ package main
 import (
 	"context"
 	"fmt"
-	"net"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
 	"strconv"
-	"time"
-
-	"github.com/docker/distribution/registry/client/transport"
-	"github.com/docker/docker/dockerversion"
-	"github.com/docker/docker/registry"
-	"github.com/docker/go-connections/sockets"
 )
 
 func doIt(ctx context.Context, regURL *url.URL, respond chan<- error) {
-	direct := &net.Dialer{
-		Timeout:   30 * time.Second,
-		KeepAlive: 30 * time.Second,
-		DualStack: true,
-	}
-
-	// TODO(dmcgowan): Call close idle connections when complete, use keep alive
-	base := &http.Transport{
-		Proxy:               http.ProxyFromEnvironment,
-		Dial:                direct.Dial,
-		TLSHandshakeTimeout: 10 * time.Second,
-		// TODO(dmcgowan): Call close idle connections when complete and use keep alive
-		DisableKeepAlives: true,
-	}
-
-	proxyDialer, err := sockets.DialerFromEnvironment(direct)
-	if err == nil {
-		base.Dial = proxyDialer.Dial
-	}
-
-	modifiers := registry.Headers(dockerversion.DockerUserAgent(ctx), nil)
-	authTransport := transport.NewTransport(base, modifiers...)
-
-	var transportOK bool
-	_, foundVersion, err := registry.PingV2Registry(regURL, authTransport)
+	regURL.Path = "/v2/"
+	resp, err := http.Get(regURL.String())
 	if err != nil {
-		transportOK = false
-		if responseErr, ok := err.(registry.PingResponseError); ok {
-			transportOK = true
-			err = responseErr.Err
-		}
+		respond <- fmt.Errorf("failed to get: %s", err)
+		return
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode == 401 {
+		respond <- nil
+		return
 	}
 
-	if err != nil || !foundVersion {
-		respond <- fmt.Errorf("error[%T / %v]; foundV2[%t]; transportOK[%t]", err, err, foundVersion, transportOK)
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		respond <- fmt.Errorf("unexpected code %d; failed to read body: %s", resp.StatusCode, err)
+		return
 	}
-
-	respond <- nil
+	respond <- fmt.Errorf("unexpected code %d; body: %q", resp.StatusCode, body)
 }
 
 func main() {
