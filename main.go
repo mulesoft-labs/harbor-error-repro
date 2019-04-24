@@ -51,7 +51,7 @@ func doIt(ctx context.Context, regURL *url.URL, respond chan<- error) {
 	}
 
 	if err != nil || !foundVersion {
-		respond <- fmt.Errorf("error[%v]; foundV2[%t]; transportOK[%t]", err, foundVersion, transportOK)
+		respond <- fmt.Errorf("error[%T / %v]; foundV2[%t]; transportOK[%t]", err, err, foundVersion, transportOK)
 	}
 
 	respond <- nil
