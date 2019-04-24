@@ -1,4 +1,3 @@
-Run `dep ensure -vendor-only`
-Now run `go run ./main.go <registry-url> <number-of-pings>`
+Run `go run ./main.go <registry-url> <number-of-pings>`
 It will output any errors or not-v2 returns it gets, plus an ALL GOOD at the
 end if it was, in fact, all good.
